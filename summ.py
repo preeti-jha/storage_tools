@@ -1233,7 +1233,7 @@ class UiInteractive(Ui):
 
         # WTF is going on
         overall = [[e[0], "VM", e[5]] for e in self.vms_usage.export_data()]
-        overall.extend([[e[0], "Snapshot", e[6]] for e in self.snap_usage.export_data()])
+        overall.extend([[e[0], "Snapshot", e[5]] for e in self.snap_usage.export_data()])
 
         # No sorting for overall tab atm
         overall.sort(key=lambda x: x[2], reverse=True)
