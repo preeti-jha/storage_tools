@@ -1,3 +1,9 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2022 Nutanix Inc. All rights reserved.
+#
+# Authors: Artem Protsenko, Daniil Makhonia, Konstantin Chestnov, Preeti Jha
+
 import env
 import sys
 import urllib3
