@@ -1383,13 +1383,16 @@ class UiInteractive(Ui):
 
 
 if __name__ == '__main__':
-
-    target_container = sys.argv[1]
-
+    try:
+        target_container = sys.argv[1]
+        mode = sys.argv[2]
+    except IndexError as e:
+        print("Please input both container_name and mode_to_run")
+        exit(0)
     if len(sys.argv) > 2:
-        use_cache = False if sys.argv[2] == 'skip_cache' else True
-        calculate_usage = True if sys.argv[2] == 'calculate_usage' else False
-        ui = True if sys.argv[2] == 'ui' else False
+        use_cache = False if mode  == 'skip_cache' else True
+        calculate_usage = True if mode == 'calculate_usage' else False
+        ui = True if mode == 'ui' else False
         if len(sys.argv) > 3:
             try:
                 duration = int(sys.argv[3])
