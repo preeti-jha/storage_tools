@@ -14,6 +14,7 @@ from collections import defaultdict, OrderedDict
 import subprocess
 import os
 import time
+import argparse
 
 # Fix prettytable
 sys.path.append('/home/nutanix/ncc/panacea/lib/py/prettytable-0.7.2-py2.7.egg')
@@ -86,7 +87,6 @@ def get_data(endpoint, params={}):
             url = 'https://%s:9440/PrismGateway/services/rest/v2.0/%s' % (cluster_ip, endpoint)
             return requests.get(url,
                                 params=params,
-                                # auth=(username, password),
                                 headers=header,
                                 verify=False
                                 ).json()
@@ -94,7 +94,7 @@ def get_data(endpoint, params={}):
             print("Please run the script with skip_cache option first")
             exit(1)
 
-    filename = '/tmp/summ_%s.json' % endpoint.split('/')[0]
+    filename = '/home/nutanix/tmp/summ_%s.json' % endpoint.split('/')[0]
     result = {}
 
     if not use_cache or not os.path.exists(filename):
@@ -542,9 +542,10 @@ def get_vms_in_container(requested_container_name):
 
             if not ndfs_filepath:
                 vmdisk_uuid = disk.get('disk_address').get('vmdisk_uuid')
+                header = {"X-Nutanix-Preauth-User": "admin"}
                 vmdisk_config = requests.get(
                     'https://%s:9440/PrismGateway/services/rest/v2.0/virtual_disks/%s' % (cluster_ip, vmdisk_uuid),
-                    auth=(username, password), verify=False).json()
+                    headers=header, verify=False).json()
                 ndfs_filepath = vmdisk_config.get('nutanix_nfsfile_path')
 
             # We don't expect to be here
@@ -580,9 +581,10 @@ def get_vg_in_container(requested_container_name):
             ndfs_filepath = disk.get('vmdisk_path')
             if not ndfs_filepath:
                 vmdisk_uuid = disk.get('vmdisk_uuid')
+                header = {"X-Nutanix-Preauth-User": "admin"}
                 vmdisk_config = requests.get(
                     'https://%s:9440/PrismGateway/services/rest/v2.0/virtual_disks/%s' % (cluster_ip, vmdisk_uuid),
-                    auth=(username, password), verify=False).json()
+                    headers=header, verify=False).json()
                 ndfs_filepath = vmdisk_config.get('nutanix_nfsfile_path')
 
             # We don't expect to be here
@@ -1237,7 +1239,6 @@ class UiInteractive(Ui):
                                         "Exclusive/Reclaimable Usage"))
         self.overall_pad.attroff(curses.A_BOLD)
 
-        # WTF is going on
         overall = [[e[0], "VM", e[5]] for e in self.vms_usage.export_data()]
         overall.extend([[e[0], "Snapshot", e[5]] for e in self.snap_usage.export_data()])
 
@@ -1350,7 +1351,6 @@ class UiInteractive(Ui):
 
                 # Display nodes pad #BROKEN
                 if current_y_position < self.height:
-                    # WTF
                     _current_y_position = current_y_position
                     _dummy_y, current_x_position = self.render_container_stats_pad(_current_y_position,
                                                                                    current_x_position, "garbage")
@@ -1383,28 +1383,29 @@ class UiInteractive(Ui):
 
 
 if __name__ == '__main__':
-    try:
-        target_container = sys.argv[1]
-        mode = sys.argv[2]
-    except IndexError as e:
-        print("Please input both container_name and mode_to_run")
-        exit(0)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--container_name', required=True, help='Container name for which usage needs to be calculated')
+    parser.add_argument('--mode', required=True, help='Mode to be used as calculate_usage or ui')
+    parser.add_argument('--days', help='Number of days to find historical stats')
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
+    args = parser.parse_args()
+    target_container = args.container_name
+    mode = args.mode
+
     if len(sys.argv) > 2:
         use_cache = False if mode  == 'skip_cache' else True
         calculate_usage = True if mode == 'calculate_usage' else False
         ui = True if mode == 'ui' else False
         if len(sys.argv) > 3:
             try:
-                duration = int(sys.argv[3])
+                duration = int(args.days)
             except ValueError as e:
                 print(e)
                 print("Please Input valid number of days")
                 exit(0)
-
-    # if not use_cache:
-    #    username = raw_input('Prism Element Username: ')
-    #    password = getpass.getpass('Prism Element Password: ')
-
     if not ui:
         # MainContainerRule().print_table()
         ContainerStatsTable().print_table()
